@@ -1,0 +1,111 @@
+PCF8574 (NXP) GGG [B0100000]
+B11111110: Belleville
+B11111101: Goncourt
+B11111011: Jacques Bonsergent
+B11110111: République
+B11101111: Filles du Calvaire
+B11011111: Strasbourg Saint-Denis
+B10111111: Temple
+B01111111: Oberkampf
+
+PCF8574 (NXP) GGS [B0100100]
+B11111110: Bonne Nouvelle
+B11111101: Réaumur-Sébastopol
+B11111011: Etienne Marcel
+B11110111: Sentier
+B11101111: Hotel de Ville
+B11011111: Rambuteau
+B10111111: Châtelet
+B01111111: Arts et Métiers
+
+PCF8574 (NXP) GSG [B0100010]
+B11111110: XX VIDE XX
+B11111101: Quatre-Septembre
+B11111011: Grands Boulevards
+B11110111: Opéra
+B11101111: Louvre-Rivoli
+B11011111: Pont Neuf
+B10111111: Les Halles
+B01111111: St Sébastien-Froissard
+
+PCF8574 (NXP) GSS [B0100110]
+B11111110: Havre Caumartin
+B11111101: Richelieu Drouot
+B11111011: Chaussée D'Antin-La Fayette
+B11110111: Le Peletier
+B11101111: Tuileries
+B11011111: Bourse
+B10111111: Palais Royal-Musée du Louvre
+B01111111: Cité
+
+PCF8574 (NXP) SGG [B0100001]
+B11111110: St Lazare
+B11111101: St Augustin
+B11111011: Miromesnil
+B11110111: St Philippe
+B11101111: Champs-Elysées
+B11011111: Madeleine
+B10111111: Concorde
+B01111111: Pyramides
+
+PCF8574 (NXP) SGS [B0100101]
+B11111110: Solférino
+B11111101: Varenne
+B11111011: Assemblée Nationale
+B11110111: Invalides
+B11101111: Rue du Bac
+B11011111: Saint François-Xavier
+B10111111: St Germain des Prés
+B01111111: Mabillon
+
+-----------------
+
+PCF8574A (Philips) GGG [B0111000]
+B11111110: Gaité
+B11111101: Odéon
+B11111011: Sèvres-Babylone
+B11110111: Duroc
+B11101111: Volontaires
+B11011111: Pasteur
+B10111111: Falguière
+B01111111: Vanneau
+
+PCF8574A (Philips) GGS [B0111100]
+B11111110: St Michel
+B11111101: Cluny La Sorbonne
+B11111011: Raspail
+B11110111: Place Monge
+B11101111: Montparnasse
+B11011111: Campo Formio
+B10111111: St Sulpice
+B01111111: St Placide
+
+PCF8574A (Philips) GSG [B0111010]
+B11111110: XX VIDE XX
+B11111101: Quai de la Rapée
+B11111011: Jussieu
+B11110111: Bastille
+B11101111: Rennes
+B11011111: Notre-Dame des Champs
+B10111111: Edgar Quinet
+B01111111: Vavin
+
+PCF8574A (Philips) GSS [B0111110]
+B11111110: Sully Morland
+B11111101: Pont Marie
+B11111011: Censier Daubenton
+B11110111: Gare de Lyon
+B11101111: Denfert-Rochereau
+B11011111: Maubert-Mutualité
+B10111111: Les Gobelins
+B01111111: Cardinal Lemoine
+
+PCF8574A (Philips) SGG [B0111001]
+B11111110: Richard Lenoir
+B11111101: Bréguet-Sabin
+B11111011: Faidherbe
+B11110111: Ledru Rollin
+B11101111: Gare d'Austerlitz
+B11011111: Saint Paul
+B10111111: Saint Marcel
+B01111111: Chemin Vert
