@@ -392,6 +392,30 @@ void displayLinePath(char line, byte target1, byte target2) {
   }
 }
 
+byte getStationCount(char line, byte target1, byte target2) {
+  int cpt = 0;
+  byte ret = 0;
+  for (int i=0; i<NombreStationsParLigne; i++) {
+/*  if (pgm_read_byte(&(ligne[line][i])) == (byte)-1) {
+      lcd.setCursor(0, 0);
+      lcd.print("W: st.notfnd fDL");
+      delay(5000);
+      lcd.clear();
+      exit(-1);
+    } */
+    if (pgm_read_byte(&(ligne[line][i])) == target1 || pgm_read_byte(&(ligne[line][i])) == target2) {
+      cpt++;
+    }
+    if (cpt > 0) {
+      ret++;
+      if (cpt == 2) {
+        break;
+      }
+    }
+  }
+  return ret;
+}
+
 /* --------- */
 
 void setup() {
@@ -416,218 +440,258 @@ void loop() {
   char a_lines[5] = { -1, -1, -1, -1, -1 };
   findLines(a_lines, arrival);
 
+  int compteurGen[2] = { 0, -1 };
+  char ret[OneChangeLimit][2] = { {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2} };
+  char ret2[TwoChangesLimit][3] = { {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2} };
+  // The following will be used to store the best paths.
+  char one_change_line_d, one_change_line_a;
+  byte one_change_step;
+  char two_changes_line_d, two_changes_line_step, two_changes_line_a;
+  byte two_changes_step1, two_changes_step2;
+  
   /* Check if both stations are on the same line. */
   if (sameLine(d_lines, a_lines) != -1) {
-    displayLinePath(sameLine(d_lines, a_lines), departure, arrival);
-  } else {
-    /* Check if there's one change. */
-    char ret[OneChangeLimit][2] = { {-1,-1}, {-1,-1}, {-1,-1}, {-1,-1}, {-1,-1}, {-1,-1}, {-1,-1}, {-1,-1}, {-1,-1}, {-1,-1}, {-1,-1}, {-1,-1}, {-1,-1}, {-1,-1}, {-1,-1}, {-1,-1}, {-1,-1}, {-1,-1}, {-1,-1}, {-1,-1} };
-    oneChange(ret, d_lines, a_lines);
+    /* GEN. CPT */
+    compteurGen[0] = getStationCount(sameLine(d_lines, a_lines), departure, arrival);
+    compteurGen[1] = 0;
+  }
+  /* Check if there's one change. */
+  oneChange(ret, d_lines, a_lines);
+  if (ret[0][0] != -2) { // w/a to pass else
+    byte d_station;
+    byte changement0, c0_station_d, c0_station_a;
+    byte a_station;
+    byte compteur = 0;
+    byte temps[OneChangeLimit][2] = {{ 0, 0 }}; // TODO: check if this function is correctly initialized
 
-    if (ret[0][0] != -1) { // w/a to pass else
-      byte d_station;
-      byte changement0, c0_station_d, c0_station_a;
-      byte a_station;
-      byte compteur1=0, compteur2=0;
-      byte temps[OneChangeLimit][2] = {{0, 0}}; // TODO: check if this function is correctly initialized
-
-      for (int r=0; r<OneChangeLimit; r++) {
-        /* On compte en partant du départ et en allant à l'arrivée. */
-        if (ret[r][0] != -1) {
-          d_station = rangStation(ret[r][0], departure); // D. to
-          a_station = rangStation(ret[r][1], arrival);   // A.
-          for (int i=1; i<NombreStationsParLigne; i++) {
-            if ((d_station-i) >= 0) {
-              if (crossesLine(ret[r][1],pgm_read_byte(&(ligne[ret[r][0]][d_station-i])))) {
-                c0_station_d = d_station - i;
-                compteur1 = i + TempsChangement; // On compte le temps du départ au changement + temps changement
-                break;
-              }
-            }
-            if ((d_station+i) < NombreStationsParLigne && pgm_read_byte(&(ligne[ret[r][0]][d_station+i])) != (byte)-1) {
-              if (crossesLine(ret[r][1],pgm_read_byte(&(ligne[ret[r][0]][d_station+i])))) {
-                c0_station_d = d_station + i;
-                compteur1 = i + TempsChangement; // idem
-                break;
-              }
+    for (int r=0; r<OneChangeLimit; r++) {
+      /* On compte en partant du départ et en allant à l'arrivée. */
+      if (ret[r][0] != -2) {
+        d_station = rangStation(ret[r][0], departure); // D. to
+        a_station = rangStation(ret[r][1], arrival);   // A.
+        for (int i=1; i<NombreStationsParLigne; i++) {
+          if ((d_station-i) >= 0) {
+            if (crossesLine(ret[r][1],pgm_read_byte(&(ligne[ret[r][0]][d_station-i])))) {
+              c0_station_d = d_station - i;
+              compteur = i + TempsChangement; // On compte le temps du départ au changement + temps changement
+              break;
             }
           }
-          changement0 = pgm_read_byte(&(ligne[ret[r][0]][c0_station_d]));
-          c0_station_a = rangStation(ret[r][1], changement0);
-          compteur1 += abs(c0_station_a - a_station); // On compte le temps du changement à l'arrivée
+          if ((d_station+i) < NombreStationsParLigne && pgm_read_byte(&(ligne[ret[r][0]][d_station+i])) != (byte)-1) {
+            if (crossesLine(ret[r][1],pgm_read_byte(&(ligne[ret[r][0]][d_station+i])))) {
+              c0_station_d = d_station + i;
+              compteur = i + TempsChangement; // idem
+              break;
+            }
+          }
         }
+        changement0 = pgm_read_byte(&(ligne[ret[r][0]][c0_station_d]));
+        c0_station_a = rangStation(ret[r][1], changement0);
+        compteur += abs(c0_station_a - a_station); // On compte le temps du changement à l'arrivée
+      }
+      temps[r][0] = compteur;
+      temps[r][1] = changement0;
+      compteur = 0;
+
+      /* On compte en sens inverse. Le chemin le plus court est dans l'un des deux trajets. */
+      if (ret[r][0] != -2) {
+        a_station = rangStation(ret[r][0], departure); // A. to
+        d_station = rangStation(ret[r][1], arrival);   // D.
+        for (int i=1; i<NombreStationsParLigne; i++) {
+          if ((d_station-i) >= 0) {
+            if (crossesLine(ret[r][0],pgm_read_byte(&(ligne[ret[r][1]][d_station-i])))) {
+              c0_station_d = d_station - i;
+              compteur = i + TempsChangement;
+              break;
+            }
+          }
+          if ((d_station+i) < NombreStationsParLigne && pgm_read_byte(&(ligne[ret[r][1]][d_station+i])) != (byte)-1) {
+            if (crossesLine(ret[r][0],pgm_read_byte(&(ligne[ret[r][1]][d_station+i])))) {
+              c0_station_d = d_station + i;
+              compteur = i + TempsChangement;
+              break;
+            }
+          }
+        }
+        changement0 = pgm_read_byte(&(ligne[ret[r][1]][c0_station_d]));
+        c0_station_a = rangStation(ret[r][0], changement0);
+        compteur += abs(c0_station_a - a_station);
+      }
+      if (compteur < temps[r][0] /* && compteur > 0 */) {
+        temps[r][0] = compteur;
         temps[r][1] = changement0;
-        
-        /* On compte en sens inverse. Le chemin le plus court est dans l'un des deux trajets. */
-        if (ret[r][0] != -1) {
-          a_station = rangStation(ret[r][0], departure); // A. to
-          d_station = rangStation(ret[r][1], arrival);   // D.
-          for (int i=1; i<NombreStationsParLigne; i++) {
-            if ((d_station-i) >= 0) {
-              if (crossesLine(ret[r][0],pgm_read_byte(&(ligne[ret[r][1]][d_station-i])))) {
-                c0_station_d = d_station - i;
-                compteur2 = i + TempsChangement;
-                break;
-              }
-            }
-            if ((d_station+i) < NombreStationsParLigne && pgm_read_byte(&(ligne[ret[r][1]][d_station+i])) != (byte)-1) {
-              if (crossesLine(ret[r][0],pgm_read_byte(&(ligne[ret[r][1]][d_station+i])))) {
-                c0_station_d = d_station + i;
-                compteur2 = i + TempsChangement;
-                break;
-              }
-            }
-          }
-          
-          changement0 = pgm_read_byte(&(ligne[ret[r][1]][c0_station_d]));
-          c0_station_a = rangStation(ret[r][0], changement0);
-          compteur2 += abs(c0_station_a - a_station);
-        }
-        temps[r][0] = min(compteur1, compteur2);
-        if (temps[r][0] == compteur2) {
-           temps[r][1] = changement0;
-        }
       }
-      /* Find best path between all possibilities. */
-      byte tmp = 0;
-      for (int i=1; i<OneChangeLimit; i++) {
-        if (temps[i][0] < temps[tmp][0] && temps[i][0] > 0) {
-          tmp = i;
-        }
-      }
-      /* We have the best path. Display it. */
-      displayLinePath(ret[tmp][0], departure, temps[tmp][1]);
-      displayLinePath(ret[tmp][1], temps[tmp][1], arrival);
-    } else {
-      /* Check if there's two changes. */
-      // initialize the array to -2 instead of -1 (avr bootloader interprets lots of -1 in memory as corrupt)
-      char ret2[TwoChangesLimit][3] = { {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2} };
-      twoChanges(ret2, d_lines, a_lines);
-      byte temps[TwoChangesLimit][3] = {{0, 0, 0}};
-
-      if (ret2[0][0] != -2) { // w/a to pass else
-        byte d_station;
-        byte changement0, c0_station_d, c0_station_a;
-        byte changement1, c1_station_d, c1_station_a;
-        byte a_station;
-        byte compteur1=0, compteur2=0;
-        for (int r=0; r<TwoChangesLimit; r++) {
-          /* On compte en partant du départ et en allant à l'arrivée en passant par la ligne intermédiaire. */
-          if (ret2[r][0] != -2) {
-            d_station = rangStation(ret2[r][0], departure); // D. to
-            a_station = rangStation(ret2[r][2], arrival);   // A.
-            for (int i=1; i<NombreStationsParLigne; i++) {
-              if ((d_station-i) >= 0) {
-                if (crossesLine(ret2[r][1],pgm_read_byte(&(ligne[ret2[r][0]][d_station-i])))) {
-                  c0_station_d = d_station - i;
-                  compteur1 = i + TempsChangement; // On compte le temps du départ au changement0
-                  break;
-                }
-              }
-              if ((d_station+i) < NombreStationsParLigne && pgm_read_byte(&(ligne[ret2[r][0]][d_station+i])) != (byte)-1) {
-                if (crossesLine(ret2[r][1],pgm_read_byte(&(ligne[ret2[r][0]][d_station+i])))) {
-                  c0_station_d = d_station + i;
-                  compteur1 = i + TempsChangement; // idem
-                  break;
-                }
-              }
-            }
-            changement0 = pgm_read_byte(&(ligne[ret2[r][0]][c0_station_d]));
-            c0_station_a = rangStation(ret2[r][1], changement0);
-
-            d_station = c0_station_a;
-            for (int i=1; i<NombreStationsParLigne; i++) {
-              if ((d_station-i) >= 0) {
-                if (crossesLine(ret2[r][2],pgm_read_byte(&(ligne[ret2[r][1]][d_station-i])))) {
-                  c1_station_d = d_station - i;
-                  compteur1 = i + TempsChangement; // On compte le temps du changement0 au changement1
-                  break;
-                }
-              }
-              if ((d_station+i) < NombreStationsParLigne && pgm_read_byte(&(ligne[ret2[r][1]][d_station+i])) != (byte)-1) {
-                if (crossesLine(ret2[r][2],pgm_read_byte(&(ligne[ret2[r][1]][d_station+i])))) {
-                  c1_station_d = d_station + i;
-                  compteur1 = i + TempsChangement; // idem
-                  break;
-                }
-              }
-            }
-            changement1 = pgm_read_byte(&(ligne[ret2[r][1]][c1_station_d]));
-            c1_station_a = rangStation(ret2[r][2], changement1);
-            compteur1 += abs(c1_station_a - a_station); // on compte le temps du changement1 à l'arrivée
-          }
-          temps[r][1] = changement0;
-          temps[r][2] = changement1;
-
-          /* On compte en sens inverse. Le chemin le plus court est dans l'un des deux trajets. */
-          if (ret2[r][0] != -2) {
-            a_station = rangStation(ret2[r][0], departure); // A. to
-            d_station = rangStation(ret2[r][2], arrival);   // D.
-            for (int i=1; i<NombreStationsParLigne; i++) {
-              if ((d_station-i) >= 0) {
-                if (crossesLine(ret2[r][1],pgm_read_byte(&(ligne[ret2[r][2]][d_station-i])))) {
-                  c1_station_d = d_station - i;
-                  compteur2 = i + TempsChangement; // On compte le temps du changement0 au changement1
-                  break;
-                }
-              }
-              if ((d_station+i) < NombreStationsParLigne && pgm_read_byte(&(ligne[ret2[r][2]][d_station+i])) != (byte)-1) {
-                if (crossesLine(ret2[r][1],pgm_read_byte(&(ligne[ret2[r][2]][d_station+i])))) {
-                  c1_station_d = d_station + i;
-                  compteur2 = i + TempsChangement; // idem
-                  break;
-                }
-              }
-            }
-            changement1 = pgm_read_byte(&(ligne[ret2[r][2]][c1_station_d]));
-            c1_station_a = rangStation(ret2[r][1], changement1);
-
-            d_station = c1_station_a;
-            for (int i=1; i<NombreStationsParLigne; i++) {
-              if ((d_station-i) >= 0) {
-                if (crossesLine(ret2[r][0],pgm_read_byte(&(ligne[ret2[r][1]][d_station-i])))) {
-                  c0_station_d = d_station - i;
-                  compteur2 = i + TempsChangement; // On compte le temps du départ au changement0
-                  break;
-                }
-              }
-              if ((d_station+i) < NombreStationsParLigne && pgm_read_byte(&(ligne[ret2[r][1]][d_station+i])) != (byte)-1) {
-                if (crossesLine(ret2[r][0],pgm_read_byte(&(ligne[ret2[r][1]][d_station+i])))) {
-                  c0_station_d = d_station + i;
-                  compteur2 = i + TempsChangement; // idem
-                  break;
-                }
-              }
-            }
-
-            changement0 = pgm_read_byte(&(ligne[ret2[r][1]][c0_station_d]));
-            c0_station_a = rangStation(ret2[r][0], changement0);
-            compteur2 += abs(c0_station_a - a_station); // on compte le temps du changement1 à l'arrivée
-          }
-          temps[r][0] = min(compteur1, compteur2);
-          if (temps[r][0] == compteur2) {
-            temps[r][1] = changement0;
-            temps[r][2] = changement1;
-          }
-        }
-        byte tmp = 0;
-        for (int i=1; i<TwoChangesLimit; i++) {
-          if (temps[i][0] < temps[tmp][0] && temps[i][0] > 0) {
-            tmp = i;
-          }
-        }
-        /* We have the best path. Display it. */
-        displayLinePath(ret2[tmp][0], departure, temps[tmp][1]);     // Departure   to changement0
-        displayLinePath(ret2[tmp][1], temps[tmp][1], temps[tmp][2]); // changement0 to changement1
-        displayLinePath(ret2[tmp][2], temps[tmp][2], arrival);       // changement1 to arrival
-      } else {
-        lcd.setCursor(0, 0);
-        lcd.print("3changes+ unsup.");
-        delay(5000);
-        lcd.clear();
-        return;
+      compteur = 0;
+    }
+    byte sol = 0;
+    /* Find best path between all possibilities. */
+    for (int i=1; i<OneChangeLimit; i++) {
+      if (temps[i][0] < temps[sol][0] && temps[i][0] > 0) {
+        sol = i;
       }
     }
+
+    /* GEN. CPT */
+    if (temps[sol][0] < compteurGen[0]) {
+      compteurGen[0] = temps[sol][0];
+      compteurGen[1] = 1;
+    }
+    /* STORE BEST PATH IN GLOBAL SCOPE */
+    one_change_line_d = ret[sol][0];
+    one_change_line_a = ret[sol][1];
+    one_change_step = temps[sol][1];
+  }
+  /* Check if there's two changes. */
+  twoChanges(ret2, d_lines, a_lines);
+  if (ret2[0][0] != -2) { // w/a to pass else
+    byte d_station;
+    byte changement0, c0_station_d, c0_station_a;
+    byte changement1, c1_station_d, c1_station_a;
+    byte a_station;
+    byte compteur = 0;
+    byte temps2[TwoChangesLimit][3] = {{ 0, 0, 0 }};
+
+    for (int r=0; r<TwoChangesLimit; r++) {
+      /* On compte en partant du départ et en allant à l'arrivée en passant par la ligne intermédiaire. */
+      if (ret2[r][0] != -2) {
+        d_station = rangStation(ret2[r][0], departure); // D. to
+        a_station = rangStation(ret2[r][2], arrival);   // A.
+        for (int i=1; i<NombreStationsParLigne; i++) {
+          if ((d_station-i) >= 0) {
+            if (crossesLine(ret2[r][1],pgm_read_byte(&(ligne[ret2[r][0]][d_station-i])))) {
+              c0_station_d = d_station - i;
+              compteur = i + TempsChangement; // On compte le temps du départ au changement0
+              break;
+            }
+          }
+          if ((d_station+i) < NombreStationsParLigne && pgm_read_byte(&(ligne[ret2[r][0]][d_station+i])) != (byte)-1) {
+            if (crossesLine(ret2[r][1],pgm_read_byte(&(ligne[ret2[r][0]][d_station+i])))) {
+              c0_station_d = d_station + i;
+              compteur = i + TempsChangement; // idem
+              break;
+            }
+          }
+        }
+        changement0 = pgm_read_byte(&(ligne[ret2[r][0]][c0_station_d]));
+        c0_station_a = rangStation(ret2[r][1], changement0);
+
+        d_station = c0_station_a;
+        for (int i=1; i<NombreStationsParLigne; i++) {
+          if ((d_station-i) >= 0) {
+            if (crossesLine(ret2[r][2],pgm_read_byte(&(ligne[ret2[r][1]][d_station-i])))) {
+              c1_station_d = d_station - i;
+              compteur = i + TempsChangement; // On compte le temps du changement0 au changement1
+              break;
+            }
+          }
+          if ((d_station+i) < NombreStationsParLigne && pgm_read_byte(&(ligne[ret2[r][1]][d_station+i])) != (byte)-1) {
+            if (crossesLine(ret2[r][2],pgm_read_byte(&(ligne[ret2[r][1]][d_station+i])))) {
+              c1_station_d = d_station + i;
+              compteur = i + TempsChangement; // idem
+              break;
+            }
+          }
+        }
+        changement1 = pgm_read_byte(&(ligne[ret2[r][1]][c1_station_d]));
+        c1_station_a = rangStation(ret2[r][2], changement1);
+        compteur += abs(c1_station_a - a_station); // on compte le temps du changement1 à l'arrivée
+      }
+      temps2[r][0] = compteur;
+      temps2[r][1] = changement0;
+      temps2[r][2] = changement1;
+      compteur = 0;
+
+      /* On compte en sens inverse. Le chemin le plus court est dans l'un des deux trajets. */
+      if (ret2[r][0] != -2) {
+        a_station = rangStation(ret2[r][0], departure); // A. to
+        d_station = rangStation(ret2[r][2], arrival);   // D.
+        for (int i=1; i<NombreStationsParLigne; i++) {
+          if ((d_station-i) >= 0) {
+            if (crossesLine(ret2[r][1],pgm_read_byte(&(ligne[ret2[r][2]][d_station-i])))) {
+              c1_station_d = d_station - i;
+              compteur = i + TempsChangement; // On compte le temps du changement0 au changement1
+              break;
+            }
+          }
+          if ((d_station+i) < NombreStationsParLigne && pgm_read_byte(&(ligne[ret2[r][2]][d_station+i])) != (byte)-1) {
+            if (crossesLine(ret2[r][1],pgm_read_byte(&(ligne[ret2[r][2]][d_station+i])))) {
+              c1_station_d = d_station + i;
+              compteur = i + TempsChangement; // idem
+              break;
+            }
+          }
+        }
+        changement1 = pgm_read_byte(&(ligne[ret2[r][2]][c1_station_d]));
+        c1_station_a = rangStation(ret2[r][1], changement1);
+
+        d_station = c1_station_a;
+        for (int i=1; i<NombreStationsParLigne; i++) {
+          if ((d_station-i) >= 0) {
+            if (crossesLine(ret2[r][0],pgm_read_byte(&(ligne[ret2[r][1]][d_station-i])))) {
+              c0_station_d = d_station - i;
+              compteur = i + TempsChangement; // On compte le temps du départ au changement0
+              break;
+            }
+          }
+          if ((d_station+i) < NombreStationsParLigne && pgm_read_byte(&(ligne[ret2[r][1]][d_station+i])) != (byte)-1) {
+            if (crossesLine(ret2[r][0],pgm_read_byte(&(ligne[ret2[r][1]][d_station+i])))) {
+              c0_station_d = d_station + i;
+              compteur = i + TempsChangement; // idem
+              break;
+            }
+          }
+        }
+        changement0 = pgm_read_byte(&(ligne[ret2[r][1]][c0_station_d]));
+        c0_station_a = rangStation(ret2[r][0], changement0);
+        compteur += abs(c0_station_a - a_station); // on compte le temps du changement1 à l'arrivée
+      }
+      if (compteur < temps2[r][0] /* && compteur > 0 */) {
+        temps2[r][0] = compteur;
+        temps2[r][1] = changement0;
+        temps2[r][2] = changement1;
+      }
+      compteur = 0;
+    }
+    byte sol2 = 0;
+    for (int i=1; i<TwoChangesLimit; i++) {
+      if (temps2[i][0] < temps2[sol2][0] && temps2[i][0] > 0) {
+        sol2 = i;
+      }
+    }
+
+    /* GEN. CPT */
+    if (temps2[sol2][0] < compteurGen[0]) {
+      compteurGen[0] = temps2[sol2][0];
+      compteurGen[1] = 2;
+    }
+    /* STORE BEST PATH IN GLOBAL SCOPE */
+    two_changes_line_d = ret2[sol2][0];
+    two_changes_line_step = ret2[sol2][1];
+    two_changes_line_a = ret2[sol2][2];
+    two_changes_step1 = temps2[sol2][1];
+    two_changes_step2 = temps2[sol2][2];
+  }
+  switch (compteurGen[1]) {
+  case 0:
+    displayLinePath(sameLine(d_lines, a_lines), departure, arrival);
+    break;
+  case 1:
+    displayLinePath(one_change_line_d, departure, one_change_step);
+    displayLinePath(one_change_line_a, one_change_step, arrival);
+    break;
+  case 2:
+    displayLinePath(two_changes_line_d, departure, two_changes_step1);
+    displayLinePath(two_changes_line_step, two_changes_step1, two_changes_step2);
+    displayLinePath(two_changes_line_a, two_changes_step2, arrival);
+    break;
+  case -1:
+    lcd.setCursor(0, 0);
+    lcd.print("3changes+ unsup.");
+    delay(5000);
+    lcd.clear();
+    return;
+  default:
+    return;
   }
 
   lcd.setCursor(0, 0);
