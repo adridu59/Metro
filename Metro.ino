@@ -441,7 +441,6 @@ void loop() {
   findLines(a_lines, arrival);
 
   int compteurGen[2] = { 0, -1 };
-  boolean cptSet = false;
   char ret[OneChangeLimit][2] = { {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2}, {-2,-2} };
   char ret2[TwoChangesLimit][3] = { {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2}, {-2,-2,-2} };
   // The following will be used to store the best paths.
@@ -455,7 +454,6 @@ void loop() {
     /* GEN. CPT */
     compteurGen[0] = getStationCount(sameLine(d_lines, a_lines), departure, arrival);
     compteurGen[1] = 0;
-    cptSet = true;
   }
   /* Check if there's one change. */
   oneChange(ret, d_lines, a_lines);
@@ -534,10 +532,9 @@ void loop() {
     }
 
     /* GEN. CPT */
-    if (temps[sol][0] < compteurGen[0] || cptSet == false) {
+    if (temps[sol][0] < compteurGen[0]) {
       compteurGen[0] = temps[sol][0];
       compteurGen[1] = 1;
-      cptSet = true;
     }
     /* STORE BEST PATH IN GLOBAL SCOPE */
     one_change_line_d = ret[sol][0];
@@ -663,10 +660,9 @@ void loop() {
     }
 
     /* GEN. CPT */
-    if (temps2[sol2][0] < compteurGen[0] || cptSet == false) {
+    if (temps2[sol2][0] < compteurGen[0]) {
       compteurGen[0] = temps2[sol2][0];
       compteurGen[1] = 2;
-      cptSet = true;
     }
     /* STORE BEST PATH IN GLOBAL SCOPE */
     two_changes_line_d = ret2[sol2][0];
